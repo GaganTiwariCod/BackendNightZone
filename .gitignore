@@ -1,0 +1,31 @@
+# Node modules & dependencies
+node_modules/
+package-lock.json
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# File uploads & user assets
+uploads/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build and coverage outputs
+dist/
+build/
+coverage/
