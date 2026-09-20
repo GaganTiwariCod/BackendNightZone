@@ -127,14 +127,34 @@ const panditRoutes = require('./routes/panditRoutes');
 const panditAdminRoutes = require('./routes/panditAdminRoutes');
 const spiritualRoutes = require('./routes/spiritualRoutes');
 const spiritualAdminRoutes = require('./routes/spiritualAdminRoutes');
+const astrologyRoutes = require('./routes/astrologyRoutes');
+const astrologyAdminRoutes = require('./routes/astrologyAdminRoutes');
+const newsRoutes = require('./routes/newsRoutes');
+const adminNewsRoutes = require('./routes/adminNewsRoutes');
+const eventRoutes = require('./routes/eventRoutes');
+const adminEventRoutes = require('./routes/adminEventRoutes');
+const seoAndStatsRoutes = require('./routes/seoAndStatsRoutes');
+const seoAndStatsController = require('./controllers/seoAndStatsController');
 const { seedMatrimonyData } = require('./seeders/matrimonySeedData');
 const seedPanditMasterData = require('./seeders/panditSeedData');
 const seedSpiritualData = require('./seeders/spiritualSeedData');
+const { seedAstrologyData } = require('./seeders/astrologySeedData');
+const { seedNewsData } = require('./seeders/newsSeedData');
+const { seedEventData } = require('./seeders/eventSeedData');
+const { startNewsWorker } = require('./workers/newsWorker');
+const { startEventWorker } = require('./workers/eventWorker');
 
 /**
  * Static file serving for user uploaded photos & documents
  */
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+/**
+ * Root SEO, Sitemap & AI Indexing Endpoints
+ */
+app.get('/llms.txt', (req, res) => seoAndStatsController.getLlmsTxt(req, res));
+app.get('/sitemap.xml', (req, res) => seoAndStatsController.getSitemapXml(req, res));
+app.get('/robots.txt', (req, res) => seoAndStatsController.getRobotsTxt(req, res));
 
 /**
  * 7. Mount API Version 1 Routes
@@ -147,6 +167,13 @@ app.use('/api/v1/pandits/admin', panditAdminRoutes);
 app.use('/api/v1/pandits', panditRoutes);
 app.use('/api/v1/spiritual-content/admin', spiritualAdminRoutes);
 app.use('/api/v1/spiritual-content', spiritualRoutes);
+app.use('/api/v1/admin/astrology', astrologyAdminRoutes);
+app.use('/api/v1/astrology', astrologyRoutes);
+app.use('/api/v1/admin/local-updates', adminNewsRoutes);
+app.use('/api/v1/local-updates', newsRoutes);
+app.use('/api/v1/admin/events', adminEventRoutes);
+app.use('/api/v1/events', eventRoutes);
+app.use('/api/v1', seoAndStatsRoutes);
 
 /**
  * 8. Error Handling Middlewares
@@ -164,9 +191,14 @@ const startServer = async () => {
   await seedMatrimonyData();
   await seedPanditMasterData();
   await seedSpiritualData();
+  await seedAstrologyData();
+  await seedNewsData();
+  await seedEventData();
+  startNewsWorker();
+  startEventWorker();
   app.listen(PORT, () => {
     console.log(`\n======================================================`);
-    console.log(`🌙 NightZone Auth, Matrimony & Pandit Server is running on port ${PORT}`);
+    console.log(`🌙 NightZone Auth, Matrimony, Pandit, Astrology & Local Updates Server is running on port ${PORT}`);
     console.log(`🌍 Environment:    ${process.env.NODE_ENV || 'development'}`);
     console.log(`🗄️  Database:       ${process.env.DB_NAME || 'NightZone'} (MySQL)`);
     console.log(`🚀 API Base URL:   http://localhost:${PORT}/api/v1`);

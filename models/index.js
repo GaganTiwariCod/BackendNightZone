@@ -152,6 +152,22 @@ const SpiritualContentTag = require('./SpiritualContentTag');
 const SpiritualContentRequest = require('./SpiritualContentRequest');
 const SpiritualRelatedContent = require('./SpiritualRelatedContent');
 
+// --- Astrology Models ---
+const AstrologyProfile = require('./AstrologyProfile');
+const AstrologyCategory = require('./AstrologyCategory');
+const AstrologyService = require('./AstrologyService');
+const AstrologerProfile = require('./AstrologerProfile');
+const AstrologerAvailability = require('./AstrologerAvailability');
+const AstrologerDocument = require('./AstrologerDocument');
+const AstrologyRequest = require('./AstrologyRequest');
+const KundliMatchingRequest = require('./KundliMatchingRequest');
+const AstrologyBooking = require('./AstrologyBooking');
+const AstrologyConsultation = require('./AstrologyConsultation');
+const ConsultationMessage = require('./ConsultationMessage');
+const AstrologyReport = require('./AstrologyReport');
+const AstrologyRecommendation = require('./AstrologyRecommendation');
+const AstrologyReview = require('./AstrologyReview');
+
 // --- Spiritual CMS Associations ---
 SpiritualContent.belongsTo(SpiritualContentType, { foreignKey: 'type_id', as: 'type' });
 SpiritualContentType.hasMany(SpiritualContent, { foreignKey: 'type_id', as: 'contents' });
@@ -175,6 +191,176 @@ SpiritualContentRequest.belongsTo(SpiritualDeity, { foreignKey: 'deity_id', as: 
 SpiritualContentRequest.belongsTo(SpiritualContent, { foreignKey: 'fulfilled_content_id', as: 'fulfilledContent' });
 
 SpiritualContent.belongsToMany(SpiritualContent, { through: SpiritualRelatedContent, foreignKey: 'content_id', otherKey: 'related_content_id', as: 'manualRelatedContents' });
+
+// --- Astrology Associations ---
+
+// 1. Astrology Profiles (Self & Other for Users)
+User.hasMany(AstrologyProfile, { foreignKey: 'user_id', as: 'astrologyProfiles', onDelete: 'CASCADE' });
+AstrologyProfile.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// 2. Astrology Categories & Services
+AstrologyCategory.hasMany(AstrologyService, { foreignKey: 'category_id', as: 'services' });
+AstrologyService.belongsTo(AstrologyCategory, { foreignKey: 'category_id', as: 'category' });
+
+// 3. Astrologer Profile & Credentials
+User.hasOne(AstrologerProfile, { foreignKey: 'user_id', as: 'astrologerProfile', onDelete: 'CASCADE' });
+AstrologerProfile.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+AstrologerProfile.hasMany(AstrologerAvailability, { foreignKey: 'astrologer_id', as: 'availabilities', onDelete: 'CASCADE' });
+AstrologerAvailability.belongsTo(AstrologerProfile, { foreignKey: 'astrologer_id', as: 'astrologer' });
+
+AstrologerProfile.hasMany(AstrologerDocument, { foreignKey: 'astrologer_id', as: 'documents', onDelete: 'CASCADE' });
+AstrologerDocument.belongsTo(AstrologerProfile, { foreignKey: 'astrologer_id', as: 'astrologer' });
+
+// 4. User Requests & Kundli Matching
+User.hasMany(AstrologyRequest, { foreignKey: 'user_id', as: 'astrologyRequests', onDelete: 'CASCADE' });
+AstrologyRequest.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+AstrologyRequest.belongsTo(AstrologyProfile, { foreignKey: 'astrology_profile_id', as: 'profile' });
+AstrologyRequest.belongsTo(AstrologyService, { foreignKey: 'service_id', as: 'service' });
+AstrologyRequest.belongsTo(AstrologyCategory, { foreignKey: 'category_id', as: 'category' });
+
+User.hasMany(KundliMatchingRequest, { foreignKey: 'user_id', as: 'kundliMatchingRequests', onDelete: 'CASCADE' });
+KundliMatchingRequest.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+KundliMatchingRequest.belongsTo(AstrologyProfile, { foreignKey: 'person_a_profile_id', as: 'personA' });
+KundliMatchingRequest.belongsTo(AstrologyProfile, { foreignKey: 'person_b_profile_id', as: 'personB' });
+
+// 5. Bookings & Consultations
+User.hasMany(AstrologyBooking, { foreignKey: 'user_id', as: 'astrologyBookings', onDelete: 'CASCADE' });
+AstrologyBooking.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+AstrologyBooking.belongsTo(AstrologerProfile, { foreignKey: 'astrologer_id', as: 'astrologer' });
+AstrologyBooking.belongsTo(AstrologyService, { foreignKey: 'service_id', as: 'service' });
+AstrologyBooking.belongsTo(AstrologyProfile, { foreignKey: 'astrology_profile_id', as: 'profile' });
+
+AstrologyBooking.hasOne(AstrologyConsultation, { foreignKey: 'booking_id', as: 'consultation', onDelete: 'CASCADE' });
+AstrologyConsultation.belongsTo(AstrologyBooking, { foreignKey: 'booking_id', as: 'booking' });
+AstrologyConsultation.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+AstrologyConsultation.belongsTo(AstrologerProfile, { foreignKey: 'astrologer_id', as: 'astrologer' });
+
+// 6. Consultation Messages
+AstrologyConsultation.hasMany(ConsultationMessage, { foreignKey: 'consultation_id', as: 'messages', onDelete: 'CASCADE' });
+ConsultationMessage.belongsTo(AstrologyConsultation, { foreignKey: 'consultation_id', as: 'consultation' });
+ConsultationMessage.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
+
+// 7. Recommendations & Pandit Connection
+AstrologyConsultation.hasMany(AstrologyRecommendation, { foreignKey: 'consultation_id', as: 'recommendations', onDelete: 'CASCADE' });
+AstrologyRecommendation.belongsTo(AstrologyConsultation, { foreignKey: 'consultation_id', as: 'consultation' });
+AstrologyRecommendation.belongsTo(AstrologerProfile, { foreignKey: 'astrologer_id', as: 'astrologer' });
+AstrologyRecommendation.belongsTo(PanditProfile, { foreignKey: 'pandit_id', as: 'pandit' });
+
+// 8. Astrology Reports
+User.hasMany(AstrologyReport, { foreignKey: 'user_id', as: 'astrologyReports', onDelete: 'CASCADE' });
+AstrologyReport.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+AstrologyReport.belongsTo(AstrologerProfile, { foreignKey: 'astrologer_id', as: 'astrologer' });
+AstrologyReport.belongsTo(AstrologyProfile, { foreignKey: 'astrology_profile_id', as: 'profile' });
+AstrologyReport.belongsTo(AstrologyBooking, { foreignKey: 'booking_id', as: 'booking' });
+
+// 9. Reviews
+AstrologerProfile.hasMany(AstrologyReview, { foreignKey: 'astrologer_id', as: 'reviews', onDelete: 'CASCADE' });
+AstrologyReview.belongsTo(AstrologerProfile, { foreignKey: 'astrologer_id', as: 'astrologer' });
+AstrologyReview.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+AstrologyReview.belongsTo(AstrologyConsultation, { foreignKey: 'consultation_id', as: 'consultation' });
+
+// --- News & Local Updates Models ---
+const NewsCategory = require('./NewsCategory');
+const NewsSource = require('./NewsSource');
+const NewsKeyword = require('./NewsKeyword');
+const News = require('./News');
+const NewsKeywordMatch = require('./NewsKeywordMatch');
+const NewsLocation = require('./NewsLocation');
+const NewsFetchLog = require('./NewsFetchLog');
+
+// News Associations
+NewsCategory.hasMany(NewsCategory, { foreignKey: 'parent_id', as: 'subcategories', onDelete: 'SET NULL' });
+NewsCategory.belongsTo(NewsCategory, { foreignKey: 'parent_id', as: 'parentCategory' });
+
+NewsCategory.hasMany(NewsKeyword, { foreignKey: 'category_id', as: 'keywords', onDelete: 'CASCADE' });
+NewsKeyword.belongsTo(NewsCategory, { foreignKey: 'category_id', as: 'category' });
+
+NewsCategory.hasMany(News, { foreignKey: 'category_id', as: 'news', onDelete: 'SET NULL' });
+News.belongsTo(NewsCategory, { foreignKey: 'category_id', as: 'category' });
+
+NewsSource.hasMany(News, { foreignKey: 'source_id', as: 'news', onDelete: 'CASCADE' });
+News.belongsTo(NewsSource, { foreignKey: 'source_id', as: 'source' });
+
+NewsSource.hasMany(NewsFetchLog, { foreignKey: 'source_id', as: 'fetchLogs', onDelete: 'CASCADE' });
+NewsFetchLog.belongsTo(NewsSource, { foreignKey: 'source_id', as: 'source' });
+
+News.hasMany(NewsKeywordMatch, { foreignKey: 'news_id', as: 'keywordMatches', onDelete: 'CASCADE' });
+NewsKeywordMatch.belongsTo(News, { foreignKey: 'news_id', as: 'news' });
+
+NewsKeyword.hasMany(NewsKeywordMatch, { foreignKey: 'keyword_id', as: 'matches', onDelete: 'CASCADE' });
+NewsKeywordMatch.belongsTo(NewsKeyword, { foreignKey: 'keyword_id', as: 'keyword' });
+
+News.hasMany(NewsLocation, { foreignKey: 'news_id', as: 'locations', onDelete: 'CASCADE' });
+NewsLocation.belongsTo(News, { foreignKey: 'news_id', as: 'news' });
+
+// --- Events & Meetup Models ---
+const EventCategory = require('./EventCategory');
+const Event = require('./Event');
+const EventLocation = require('./EventLocation');
+const EventParticipant = require('./EventParticipant');
+const EventAttendance = require('./EventAttendance');
+const EventAnnouncement = require('./EventAnnouncement');
+const EventFavorite = require('./EventFavorite');
+const EventReport = require('./EventReport');
+const EventChangeHistory = require('./EventChangeHistory');
+const Meetup = require('./Meetup');
+const MeetupParticipant = require('./MeetupParticipant');
+
+// Event Associations
+User.hasMany(Event, { foreignKey: 'organizer_id', as: 'organizedEvents', onDelete: 'CASCADE' });
+Event.belongsTo(User, { foreignKey: 'organizer_id', as: 'organizer' });
+
+EventCategory.hasMany(Event, { foreignKey: 'category_id', as: 'events', onDelete: 'RESTRICT' });
+Event.belongsTo(EventCategory, { foreignKey: 'category_id', as: 'category' });
+
+Event.hasOne(EventLocation, { foreignKey: 'event_id', as: 'location', onDelete: 'CASCADE' });
+EventLocation.belongsTo(Event, { foreignKey: 'event_id', as: 'event' });
+
+Event.hasMany(EventParticipant, { foreignKey: 'event_id', as: 'participants', onDelete: 'CASCADE' });
+EventParticipant.belongsTo(Event, { foreignKey: 'event_id', as: 'event' });
+
+User.hasMany(EventParticipant, { foreignKey: 'user_id', as: 'eventParticipations', onDelete: 'CASCADE' });
+EventParticipant.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+Event.hasMany(EventAttendance, { foreignKey: 'event_id', as: 'attendanceRecords', onDelete: 'CASCADE' });
+EventAttendance.belongsTo(Event, { foreignKey: 'event_id', as: 'event' });
+
+User.hasMany(EventAttendance, { foreignKey: 'user_id', as: 'attendance', onDelete: 'CASCADE' });
+EventAttendance.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+Event.hasMany(EventAnnouncement, { foreignKey: 'event_id', as: 'announcements', onDelete: 'CASCADE' });
+EventAnnouncement.belongsTo(Event, { foreignKey: 'event_id', as: 'event' });
+
+User.hasMany(EventAnnouncement, { foreignKey: 'created_by', as: 'createdAnnouncements', onDelete: 'CASCADE' });
+EventAnnouncement.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
+Event.hasMany(EventFavorite, { foreignKey: 'event_id', as: 'favorites', onDelete: 'CASCADE' });
+EventFavorite.belongsTo(Event, { foreignKey: 'event_id', as: 'event' });
+
+User.hasMany(EventFavorite, { foreignKey: 'user_id', as: 'favoriteEvents', onDelete: 'CASCADE' });
+EventFavorite.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+Event.hasMany(EventReport, { foreignKey: 'event_id', as: 'reports', onDelete: 'CASCADE' });
+EventReport.belongsTo(Event, { foreignKey: 'event_id', as: 'event' });
+
+User.hasMany(EventReport, { foreignKey: 'reporter_id', as: 'submittedEventReports', onDelete: 'CASCADE' });
+EventReport.belongsTo(User, { foreignKey: 'reporter_id', as: 'reporter' });
+
+Event.hasMany(EventChangeHistory, { foreignKey: 'event_id', as: 'changeHistory', onDelete: 'CASCADE' });
+EventChangeHistory.belongsTo(Event, { foreignKey: 'event_id', as: 'event' });
+
+Event.hasMany(Meetup, { foreignKey: 'event_id', as: 'meetups', onDelete: 'CASCADE' });
+Meetup.belongsTo(Event, { foreignKey: 'event_id', as: 'event' });
+
+User.hasMany(Meetup, { foreignKey: 'organizer_id', as: 'organizedMeetups', onDelete: 'CASCADE' });
+Meetup.belongsTo(User, { foreignKey: 'organizer_id', as: 'organizer' });
+
+Meetup.hasMany(MeetupParticipant, { foreignKey: 'meetup_id', as: 'participants', onDelete: 'CASCADE' });
+MeetupParticipant.belongsTo(Meetup, { foreignKey: 'meetup_id', as: 'meetup' });
+
+User.hasMany(MeetupParticipant, { foreignKey: 'user_id', as: 'meetupMemberships', onDelete: 'CASCADE' });
+MeetupParticipant.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 module.exports = {
   sequelize,
@@ -221,5 +407,41 @@ module.exports = {
   SpiritualContentTranslation,
   SpiritualContentTag,
   SpiritualContentRequest,
-  SpiritualRelatedContent
+  SpiritualRelatedContent,
+  // Astrology Exports
+  AstrologyProfile,
+  AstrologyCategory,
+  AstrologyService,
+  AstrologerProfile,
+  AstrologerAvailability,
+  AstrologerDocument,
+  AstrologyRequest,
+  KundliMatchingRequest,
+  AstrologyBooking,
+  AstrologyConsultation,
+  ConsultationMessage,
+  AstrologyReport,
+  AstrologyRecommendation,
+  AstrologyReview,
+  // News & Local Updates Exports
+  NewsCategory,
+  NewsSource,
+  NewsKeyword,
+  News,
+  NewsKeywordMatch,
+  NewsLocation,
+  NewsFetchLog,
+  // Events & Meetup Exports
+  EventCategory,
+  Event,
+  EventLocation,
+  EventParticipant,
+  EventAttendance,
+  EventAnnouncement,
+  EventFavorite,
+  EventReport,
+  EventChangeHistory,
+  Meetup,
+  MeetupParticipant
 };
+
