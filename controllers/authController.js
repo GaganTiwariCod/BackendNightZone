@@ -18,6 +18,7 @@ const {
   getRefreshTokenCookieOptions
 } = require('../utils/tokenUtils');
 const { verifyGoogleIdToken } = require('../utils/googleAuth');
+const { sendOtpEmail, sendPasswordResetEmail } = require('../utils/emailService');
 
 /**
  * Helper to generate unique store slug for merchants
@@ -463,6 +464,13 @@ const forgotPassword = async (req, res, next) => {
 
     console.log(`[NightZone PASSWORD RESET TOKEN for ${user.email}]: ${resetToken}`);
 
+    // Dispatch password reset email
+    try {
+      await sendPasswordResetEmail(user.email, resetToken);
+    } catch (mailErr) {
+      console.error('⚠️ [Email Service Error]: Failed to send reset password email:', mailErr.message);
+    }
+
     return ApiResponse.success(
       res,
       'If an account exists with that email address, a password reset token has been sent.',
@@ -539,6 +547,13 @@ const sendEmailOtp = async (req, res, next) => {
     console.log(`\n======================================================`);
     console.log(`📧 [NightZone EMAIL OTP for ${cleanEmail}]: ${otpCode} (Valid for 10 mins)`);
     console.log(`======================================================\n`);
+
+    // Dispatch real email via Nodemailer
+    try {
+      await sendOtpEmail(cleanEmail, otpCode, type);
+    } catch (mailErr) {
+      console.error('⚠️ [Email Service Error]: Failed to send OTP email:', mailErr.message);
+    }
 
     return ApiResponse.success(
       res,
