@@ -25,8 +25,16 @@ app.use(
 /**
  * 2. Cross-Origin Resource Sharing (CORS)
  */
+const configuredClientUrls = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map((url) => url.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
 const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
+  ...configuredClientUrls,
+  'https://pooja.goeazz.com',
+  'https://www.pooja.goeazz.com',
+  'http://localhost:5173',
   'http://localhost:3000',
   'http://localhost:5174',
   'http://localhost:5000'
@@ -37,10 +45,11 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, Postman, curl, Swagger UI)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      const cleanOrigin = origin.replace(/\/$/, '');
+      if (allowedOrigins.includes(cleanOrigin) || process.env.NODE_ENV === 'development') {
         return callback(null, true);
       }
-      return callback(new Error('CORS policy violation: Origin not allowed.'));
+      return callback(new Error(`CORS policy violation: Origin ${origin} not allowed.`));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
